@@ -1,0 +1,70 @@
+# ── Dependencies ─────────────────────────────────────────────────────────────
+node_modules/
+.pnp
+.pnp.js
+.yarn/install-state.gz
+
+# ── Environment & secrets ─────────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+# keep .env.example committed as a template
+
+# ── RSA / JWT signing keys ────────────────────────────────────────────────────
+backend/keys/private.pem
+backend/keys/*.pem
+*.pem
+*.key
+*.p12
+*.pfx
+
+# ── Build output ──────────────────────────────────────────────────────────────
+frontend/dist/
+frontend/build/
+backend/dist/
+backend/build/
+
+# ── Logs ─────────────────────────────────────────────────────────────────────
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ── Test / coverage output ────────────────────────────────────────────────────
+coverage/
+*.lcov
+.nyc_output/
+
+# ── Prisma generated client ───────────────────────────────────────────────────
+backend/node_modules/.prisma/
+
+# ── Vite / Rollup cache ───────────────────────────────────────────────────────
+frontend/.vite/
+frontend/node_modules/.vite/
+*.tsbuildinfo
+
+# ── OS artefacts ─────────────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ── Editor / IDE ──────────────────────────────────────────────────────────────
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+*.swp
+*.swo
+*~
+
+# ── Docker volumes / local data ───────────────────────────────────────────────
+docker/postgres-data/

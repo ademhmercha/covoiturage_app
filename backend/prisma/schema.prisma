@@ -1,0 +1,226 @@
+// Schéma Prisma — Wasel
+// PostgreSQL 16. Connexion via SSL/TLS obligatoire en production
+// (Azure Database for PostgreSQL Flexible Server impose sslmode=require).
+//
+// Tous les identifiants exposés par l'API sont des UUID v4 (jamais d'ID
+// auto-incrémenté) — cahier des charges section 5.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum TripStatus {
+  SCHEDULED
+  CANCELLED
+  COMPLETED
+}
+
+enum BookingStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  CANCELLED
+}
+
+enum NotificationType {
+  NEW_BOOKING
+  BOOKING_ACCEPTED
+  NEW_MESSAGE
+  DEPARTURE_REMINDER
+}
+
+// TEXT : texte libre. AUDIO : data URI base64 audio. IMAGE : data URI base64 image.
+enum MessageType {
+  TEXT
+  AUDIO
+  IMAGE
+}
+
+model User {
+  id           String  @id @default(uuid()) @db.Uuid
+  email        String  @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+
+  // Chiffré en base (AES-256-GCM, voir src/utils/encryption.js) —
+  // cahier des charges section 6 ("téléphone, adresse").
+  phone String?
+
+  avatarUrl  String?
+  isVerified Boolean @default(false)
+  role       Role    @default(USER)
+
+  // Verrouillage de compte après échecs de connexion répétés (section 1).
+  failedLoginAttempts Int       @default(0)
+  lockedUntil         DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  refreshTokens   RefreshToken[]
+  tripsAsDriver   Trip[]          @relation("DriverTrips")
+  bookings        Booking[]
+  messages        Message[]
+  notifications   Notification[]
+  ratingsGiven    Rating[]        @relation("GivenRatings")
+  ratingsReceived Rating[]        @relation("ReceivedRatings")
+  favoriteRoutes  FavoriteRoute[]
+
+  @@map("users")
+}
+
+// Refresh tokens : rotation à chaque usage, révocables (section 1).
+// Seul le hash du token est stocké (jamais le token en clair).
+model RefreshToken {
+  id     String @id @default(uuid()) @db.Uuid
+  userId String @db.Uuid
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  tokenHash      String    @unique
+  expiresAt      DateTime
+  revokedAt      DateTime?
+  replacedByHash String?
+  createdByIp    String?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+model Trip {
+  id       String @id @default(uuid()) @db.Uuid
+  driverId String @db.Uuid
+  driver   User   @relation("DriverTrips", fields: [driverId], references: [id], onDelete: Cascade)
+
+  originLabel String
+  // Coordonnées arrondies à 3 décimales (~111m) avant stockage — section 10.
+  originLat Float
+  originLng Float
+
+  destinationLabel String
+  destinationLat    Float
+  destinationLng    Float
+
+  departureAt    DateTime
+  seatsAvailable Int
+  pricePerSeat   Float
+  vehicleInfo    String?
+
+  status TripStatus @default(SCHEDULED)
+
+  isRecurring   Boolean @default(false)
+  recurringDays String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  bookings Booking[]
+
+  @@index([departureAt])
+  @@index([originLat, originLng])
+  @@map("trips")
+}
+
+model Booking {
+  id     String @id @default(uuid()) @db.Uuid
+  tripId String @db.Uuid
+  trip   Trip   @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  passengerId String @db.Uuid
+  passenger   User   @relation(fields: [passengerId], references: [id], onDelete: Cascade)
+
+  seats  Int
+  status BookingStatus @default(PENDING)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  messages Message[]
+  rating   Rating?
+
+  @@index([tripId])
+  @@index([passengerId])
+  @@map("bookings")
+}
+
+// Messagerie scoping par réservation (chat passager <-> conducteur).
+model Message {
+  id        String  @id @default(uuid()) @db.Uuid
+  bookingId String  @db.Uuid
+  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  senderId String @db.Uuid
+  sender   User   @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  type    MessageType @default(TEXT)
+  content String
+  seenAt  DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([bookingId])
+  @@map("messages")
+}
+
+model Notification {
+  id     String @id @default(uuid()) @db.Uuid
+  userId String @db.Uuid
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type    NotificationType
+  payload Json
+  readAt  DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, readAt])
+  @@map("notifications")
+}
+
+// Un passager peut noter un conducteur une seule fois par réservation terminée.
+model Rating {
+  id        String  @id @default(uuid()) @db.Uuid
+  bookingId String  @unique @db.Uuid
+  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  raterId String @db.Uuid
+  rater   User   @relation("GivenRatings", fields: [raterId], references: [id], onDelete: Cascade)
+
+  ratedId String @db.Uuid
+  rated   User   @relation("ReceivedRatings", fields: [ratedId], references: [id], onDelete: Cascade)
+
+  score   Int
+  comment String?
+
+  createdAt DateTime @default(now())
+
+  @@index([ratedId])
+  @@map("ratings")
+}
+
+model FavoriteRoute {
+  id     String @id @default(uuid()) @db.Uuid
+  userId String @db.Uuid
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  fromCity String
+  toCity   String
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, fromCity, toCity])
+  @@index([userId])
+  @@map("favorite_routes")
+}

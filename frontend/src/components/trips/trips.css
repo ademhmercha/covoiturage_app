@@ -1,0 +1,248 @@
+.trip-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.trip-card__route {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.trip-card__place {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+}
+
+.trip-card__pin--origin {
+  color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.trip-card__pin--destination {
+  color: var(--color-accent);
+  flex-shrink: 0;
+}
+
+.trip-card__divider {
+  flex: 1;
+  height: 0;
+  border-top: 2px dashed var(--color-border);
+  min-width: 24px;
+}
+
+.trip-card__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  padding-block: var(--space-2);
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.trip-card__price {
+  font-weight: 700;
+  color: var(--color-primary-dark);
+}
+
+.trip-card__footer {
+  flex-wrap: wrap;
+}
+
+.verified-badge {
+  width: 18px;
+  height: 18px;
+  color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+/* ----------------------------- Sélecteur de lieu (publication) ----------------------------- */
+
+.location-picker__targets {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.location-picker__target {
+  flex: 1;
+  display: flex;
+  align-items: stretch;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  overflow: hidden;
+}
+
+.location-picker__target.active {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+}
+
+.location-picker__dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.location-picker__dot--origin {
+  background: var(--color-primary);
+}
+
+.location-picker__dot--destination {
+  background: var(--color-accent);
+}
+
+.location-picker__coords {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  font-weight: 400;
+}
+
+.location-picker__input-wrap {
+  position: relative;
+}
+
+.location-picker__input-wrap input {
+  width: 100%;
+  padding-inline-end: 36px;
+}
+
+.location-picker__input-spinner {
+  position: absolute;
+  inset-inline-end: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-primary);
+}
+
+.location-picker__target-select {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-align: start;
+  min-width: 0;
+  color: inherit;
+}
+
+.location-picker__clear {
+  display: flex;
+  align-items: center;
+  padding-inline: var(--space-3);
+  background: transparent;
+  border: none;
+  border-inline-start: 1px solid var(--color-border);
+  cursor: pointer;
+  color: var(--color-text-muted);
+  font-size: 1.1rem;
+  line-height: 1;
+  transition: background 0.15s, color 0.15s;
+}
+
+.location-picker__clear:hover {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* ----------------------------- Map wrapper & overlay ----------------------------- */
+
+.map-wrapper {
+  position: relative;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0 0 0 / 0.12);
+}
+
+.map-wrapper--clickable .leaflet-container {
+  cursor: crosshair !important;
+}
+
+/* Clear Leaflet's default div-icon border/background for our SVG pins */
+.wasel-pin {
+  background: none !important;
+  border: none !important;
+}
+
+.map-overlay-controls {
+  position: absolute;
+  bottom: 24px;
+  inset-inline-end: 12px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.map-locate-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: var(--color-surface);
+  color: var(--color-primary);
+  box-shadow: 0 2px 8px rgba(0 0 0 / 0.2);
+  cursor: pointer;
+  transition: background 0.15s, box-shadow 0.15s;
+}
+
+.map-locate-btn:hover:not(:disabled) {
+  background: var(--color-primary-light);
+  box-shadow: 0 3px 12px rgba(0 0 0 / 0.25);
+}
+
+.map-locate-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.map-locate-error {
+  position: absolute;
+  bottom: 72px;
+  inset-inline-end: 12px;
+  z-index: 1000;
+  margin: 0;
+  padding: var(--space-1) var(--space-3);
+  background: #fee2e2;
+  color: #991b1b;
+  border-radius: var(--radius-md);
+  font-size: 0.8rem;
+  max-width: 200px;
+  box-shadow: 0 1px 4px rgba(0 0 0 / 0.15);
+}
+
+/* Pulsing blue dot for user location */
+
+.map-user-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #3b82f6;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.6);
+  animation: map-user-pulse 1.8s ease-out infinite;
+}
+
+@keyframes map-user-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.6); }
+  70%  { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+}

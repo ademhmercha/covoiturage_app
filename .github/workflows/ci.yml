@@ -1,0 +1,109 @@
+name: CI
+
+# Pipeline d'intégration continue (cahier des charges section 15) :
+# - aucune valeur secrète réelle n'est stockée ici (uniquement des valeurs de
+#   test, sans rapport avec les environnements de production Azure) ;
+# - en production, les secrets (FIELD_ENCRYPTION_KEY, clés JWT RS256, chaînes
+#   de connexion) proviennent d'Azure Key Vault, jamais du dépôt ni des
+#   variables de workflow.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend — migrations, tests de sécurité, audit
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: wasel
+          POSTGRES_PASSWORD: wasel_ci_only
+          POSTGRES_DB: wasel_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U wasel"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://wasel:wasel_ci_only@localhost:5432/wasel_test?schema=public
+      REDIS_URL: redis://localhost:6379
+      CORS_ALLOWED_ORIGINS: https://wasel.example
+      LOG_LEVEL: error
+      JWT_ACCESS_TOKEN_TTL_SECONDS: "900"
+      JWT_REFRESH_TOKEN_TTL_SECONDS: "604800"
+      LOGIN_RATE_LIMIT_WINDOW_MS: "900000"
+      LOGIN_RATE_LIMIT_MAX: "5"
+      RATE_LIMIT_WINDOW_MS: "60000"
+      RATE_LIMIT_MAX: "100"
+      # Clé AES-256-GCM de 32 octets (base64) — usage CI uniquement, ne
+      # protège aucune donnée réelle. En production : Azure Key Vault.
+      FIELD_ENCRYPTION_KEY: "WdjqYm0hpL0zR9Pu13KxbyUspxhn4R8v2l0I6x5hTkA="
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Installer les dépendances
+        run: npm ci
+
+      - name: Générer les clés JWT RS256 (éphémères, CI uniquement)
+        run: npm run generate:keys -w backend
+
+      - name: Appliquer les migrations Prisma sur la base de test
+        run: npm run prisma:deploy -w backend
+
+      - name: Audit des dépendances (échec si vulnérabilité élevée/critique)
+        run: npm audit --audit-level=high
+
+      - name: Tests de sécurité et d'intégration (Jest + Supertest)
+        run: npm run test:backend
+
+  frontend:
+    name: Frontend — lint & build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Installer les dépendances
+        run: npm ci
+
+      - name: Lint (ESLint)
+        run: npm run lint -w frontend
+
+      - name: Build de production
+        run: npm run build:frontend
+        env:
+          VITE_API_URL: https://api.wasel.example
