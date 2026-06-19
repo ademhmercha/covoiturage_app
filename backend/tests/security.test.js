@@ -71,8 +71,8 @@ describe("Limite de taille des payloads", () => {
     app = loadApp();
   });
 
-  it("rejette un payload JSON de plus de 250kb avec 413", async () => {
-    const oversized = "x".repeat(251 * 1024);
+  it("rejette un payload JSON de plus de 3 Mo avec 413", async () => {
+    const oversized = "x".repeat(3 * 1024 * 1024 + 1024); // 3 Mo + 1 ko > limite "3mb"
 
     const res = await request(app)
       .post("/api/health")
