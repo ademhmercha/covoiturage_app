@@ -118,9 +118,16 @@ describe("Gestionnaire d'erreurs en production", () => {
 
   beforeAll(() => {
     jest.resetModules();
+    // Fournir toutes les vars requises en production pour que env.js ne
+    // déclenche pas process.exit(1) lors du rechargement du module.
     Object.assign(process.env, {
       NODE_ENV: "production",
-      CORS_ALLOWED_ORIGINS: "https://wasel.example",
+      CORS_ALLOWED_ORIGINS: process.env.CORS_ALLOWED_ORIGINS || "https://wasel.example",
+      DATABASE_URL: process.env.DATABASE_URL || "postgresql://test:test@localhost:5432/test",
+      REDIS_URL: process.env.REDIS_URL || "redis://localhost:6379",
+      FIELD_ENCRYPTION_KEY: process.env.FIELD_ENCRYPTION_KEY || "WdjqYm0hpL0zR9Pu13KxbyUspxhn4R8v2l0I6x5hTkA=",
+      JWT_PRIVATE_KEY_PATH: "./keys/private.pem",
+      JWT_PUBLIC_KEY_PATH: "./keys/public.pem",
     });
     // eslint-disable-next-line global-require
     ({ errorHandler } = require("../src/middleware/errorHandler"));
