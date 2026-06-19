@@ -8,11 +8,10 @@ const STUN = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
  * signalisation. Flux : request → accept → offer/answer → ICE → connexion.
  *
  * @param {object} params
- * @param {string} params.myId        - ID de l'utilisateur courant
  * @param {object} params.otherUser   - { id, firstName, lastName, avatarUrl }
  * @param {string} params.bookingId   - Pour inclure dans call:request
  */
-export function useWebRTCCall({ myId, otherUser, bookingId }) {
+export function useWebRTCCall({ otherUser, bookingId }) {
   const socket = useSocket();
 
   // Refs stables utilisées dans les handlers d'événements (évitent les
@@ -147,7 +146,7 @@ export function useWebRTCCall({ myId, otherUser, bookingId }) {
 
     const onICECandidate = async ({ candidate }) => {
       const pc = pcRef.current;
-      if (!pc || !pc.remoteDescription) {
+      if (!pc?.remoteDescription) {
         iceCandidateQueueRef.current.push(candidate);
         return;
       }

@@ -79,7 +79,6 @@ function ChatBubble({ msg, isMine, otherUser, onImageClick, language }) {
       <div className="chat-bubble-content">
         <div className={`chat-bubble${isMine ? " chat-bubble--mine" : " chat-bubble--other"}`}>
           {msg.type === "AUDIO" ? (
-            // eslint-disable-next-line jsx-a11y/media-has-caption
             <audio controls src={msg.content} className="chat-bubble-audio" />
           ) : msg.type === "IMAGE" ? (
             <button
@@ -233,7 +232,7 @@ export default function BookingDetailPage() {
   const existingRating = ratingData?.rating || null;
 
   const { callState, isMuted, durationSec, remoteAudioRef, startCall, acceptCall, rejectCall, hangUp, toggleMute } =
-    useWebRTCCall({ myId: user?.id, otherUser: otherParty, bookingId });
+    useWebRTCCall({ otherUser: otherParty, bookingId });
 
   // Scroll vers le bas à chaque nouveau message.
   useEffect(() => {
@@ -369,7 +368,6 @@ export default function BookingDetailPage() {
   return (
     <div className="chat-full-page">
       {/* Audio distant (invisible) */}
-      {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
       <audio ref={remoteAudioRef} autoPlay playsInline />
 
       {/* Overlay d'appel */}
